@@ -3,7 +3,7 @@ import http from 'http';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import { connectDB } from './src/config/database.js';
-import { connectSocket } from './src/config/websocket.js';
+import { connectSocket } from './src/config/webSocket.js';
 import { connectRedis } from './src/config/redis.js';
 import authRoutes from './src/routes/auth.js';
 import chatRoutes from './src/routes/chat.js';
