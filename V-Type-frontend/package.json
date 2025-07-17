@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && vercel --prod",
+    "deploy:staging": "npm run build && vercel",
+    "link": "vercel link",
+    "env:pull": "vercel env pull .env.local",
+    "env:push": "vercel env push .env.local",
+    "logs": "vercel logs"
   },
   "dependencies": {
     "react": "^19.1.0",

@@ -4,13 +4,27 @@
         {
             "src": "./server.js",
             "use": "@vercel/node",
-            "config": {}
+            "config": {
+                "maxDuration": 30
+            }
         }
     ],
     "routes": [
         {
+            "src": "/api/(.*)",
+            "dest": "/server.js"
+        },
+        {
             "src": "/(.*)",
-            "dest": "/"
+            "dest": "/server.js"
         }
-    ]
+    ],
+    "functions": {
+        "server.js": {
+            "maxDuration": 30
+        }
+    },
+    "env": {
+        "NODE_ENV": "production"
+    }
 }

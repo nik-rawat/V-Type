@@ -1,12 +1,32 @@
 {
   "name": "vtype",
   "version": "1.0.0",
-  "description": "",
+  "description": "Real-time chat application with audio and video call support - Full Stack Deployment",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "install:backend": "cd V-Type-backend && npm install",
+    "install:frontend": "cd V-Type-frontend && npm install",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "build:frontend": "cd V-Type-frontend && npm run build",
+    "build:backend": "cd V-Type-backend && npm install --production",
+    "build:all": "npm run build:backend && npm run build:frontend",
+    "deploy:backend": "cd V-Type-backend && vercel --prod",
+    "deploy:frontend": "cd V-Type-frontend && vercel --prod",
+    "deploy:all": "npm run build:all && npm run deploy:backend && npm run deploy:frontend",
+    "vercel:link:backend": "cd V-Type-backend && vercel link",
+    "vercel:link:frontend": "cd V-Type-frontend && vercel link",
+    "vercel:env:backend": "cd V-Type-backend && vercel env pull .env.local",
+    "vercel:env:frontend": "cd V-Type-frontend && vercel env pull .env.local",
+    "dev:backend": "cd V-Type-backend && npm run dev",
+    "dev:frontend": "cd V-Type-frontend && npm run dev",
+    "start:backend": "cd V-Type-backend && npm start",
+    "preview:frontend": "cd V-Type-frontend && npm run preview"
   },
-  "keywords": [],
+  "keywords": ["chat", "realtime", "socket.io", "react", "express", "vercel"],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "vercel": "^37.27.0"
+  }
 }
