@@ -1,7 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import User from '../models/user.js';
-import { body } from 'express-validator';
+import { body, validationResult } from 'express-validator';
 import { 
   generateTokens, 
   verifyRefreshToken, 
@@ -19,8 +19,23 @@ router.post('/register', [
     body('username').isLength({ min: 3 }).trim().escape(),
     body('email').isEmail().normalizeEmail(),
     body('password').isLength({ min: 6 })
-], async (req, res) => {
+  ], async (req, res) => {
+  console.log('Received registration request:', req.body);
   try {
+    // Check validation errors FIRST
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
+      return res.status(400).json({ 
+        message: 'Validation failed',
+        errors: errors.array().map(error => ({
+          field: error.path,
+          message: error.msg,
+          value: error.value
+        }))
+      });
+    }
+
     const { username, email, password } = req.body;
     console.log('Registration request:', { username, email, password });
 
@@ -30,6 +45,7 @@ router.post('/register', [
     });
     
     if (existingUser) {
+      console.log('Existing user found:', { email: existingUser.email, username: existingUser.username });
       return res.status(400).json({ 
         message: existingUser.email === email ? 'Email already registered' : 'Username already taken'
       });
@@ -38,6 +54,7 @@ router.post('/register', [
     // Hash password
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
+    console.log('Hashed password:', hashedPassword);
 
     // Create user
     const user = new User({
@@ -74,13 +91,15 @@ router.post('/register', [
   }
 });
 
+
 // Login
 router.post('/login', [
-    body('username').isLength({ min: 3 }).trim().escape(),
     body('email').isEmail().normalizeEmail(),
     body('password').isLength({ min: 6 })
 ], async (req, res) => {
   try {
+    console.log('Login request:', req.body);
+
     const { email, password } = req.body;
 
     // Find user

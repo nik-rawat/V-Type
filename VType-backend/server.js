@@ -6,6 +6,7 @@ import { connectDB } from './src/config/database.js';
 import { connectSocket } from './src/config/websocket.js';
 import { connectRedis } from './src/config/redis.js';
 import authRoutes from './src/routes/auth.js';
+import chatRoutes from './src/routes/chat.js';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ const server = http.createServer(app);
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/chat', chatRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

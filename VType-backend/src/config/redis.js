@@ -1,4 +1,4 @@
-import redis from 'redis';
+import { createClient } from 'redis';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -11,48 +11,22 @@ const connectRedis = async () => {
       throw new Error('Redis environment variables are not properly configured');
     }
 
-    // Create Redis client - compatible with older versions
-    client = redis.createClient({
-      host: process.env.REDIS_HOST,
-      port: process.env.REDIS_PORT,
-      password: process.env.REDIS_PASSWORD,
-      retry_strategy: (options) => {
-        if (options.error && options.error.code === 'ECONNREFUSED') {
-          return new Error('The server refused the connection');
-        }
-        if (options.total_retry_time > 1000 * 60 * 60) {
-          return new Error('Retry time exhausted');
-        }
-        if (options.attempt > 10) {
-          return undefined;
-        }
-        return Math.min(options.attempt * 100, 3000);
-      }
+    console.log('Attempting to connect to Redis...');
+
+    // Modern Redis v4+ client
+    client = createClient({
+      socket: {
+        host: process.env.REDIS_HOST,
+        port: parseInt(process.env.REDIS_PORT)
+      },
+      password: process.env.REDIS_PASSWORD
     });
 
-    // Handle Redis events
-    client.on('error', (err) => {
-      console.error('Redis Client Error:', err);
-    });
+    client.on('error', (err) => console.error('Redis Client Error:', err));
+    client.on('connect', () => console.log('Redis client connected'));
+    client.on('ready', () => console.log('Redis client ready'));
 
-    client.on('connect', () => {
-      console.log('Redis client connected');
-    });
-
-    client.on('ready', () => {
-      console.log('Redis client ready to use');
-    });
-
-    client.on('end', () => {
-      console.log('Redis client disconnected');
-    });
-
-    // For older versions of redis, connection is automatic
-    // For newer versions, we need to check if connect method exists
-    if (typeof client.connect === 'function') {
-      await client.connect();
-    }
-    
+    await client.connect();
     console.log('Connected to Redis successfully');
     
     return client;
@@ -73,11 +47,7 @@ const getRedisClient = () => {
 // Disconnect Redis client
 const disconnectRedis = async () => {
   if (client) {
-    if (typeof client.quit === 'function') {
-      await client.quit();
-    } else if (typeof client.disconnect === 'function') {
-      await client.disconnect();
-    }
+    await client.quit();
     client = null;
     console.log('Redis client disconnected');
   }
