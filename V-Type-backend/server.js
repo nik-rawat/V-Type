@@ -2,15 +2,23 @@ import express from 'express';
 import http from 'http';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { connectDB } from './src/config/database.js';
+import { initGridFS } from './src/config/gridfs.js';
 import { connectSocket } from './src/config/webSocket.js';
 import { connectRedis } from './src/config/redis.js';
+import { initializeCleanupSchedulers, stopCleanupSchedulers } from './src/services/scheduler.js';
 import authRoutes from './src/routes/auth.js';
 import chatRoutes from './src/routes/chat.js';
+import userRoutes from './src/routes/user.js';
+import adminRoutes from './src/routes/admin.js';
 
 dotenv.config();
 
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 //Middleware
 app.use(cors({
@@ -20,12 +28,17 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve static files (uploaded images)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -34,6 +47,11 @@ app.get('/api/health', (req, res) => {
         message: 'Server is running',
         timestamp: new Date().toISOString()
     });
+});
+
+// Root route
+app.get('/', (req, res) => {
+  res.json({ message: 'VType Backend API', status: 'running' });
 });
 
 // 404 handler
@@ -49,14 +67,28 @@ app.use((err, req, res, next) => {
 // Initialize connections
 const initializeConnections = async () => {
   try {
-    // Database connection
+    // Database connection first
     await connectDB();
+    console.log('Database connected');
+    
+    // Initialize GridFS after database connection
+    await initGridFS();
+    console.log('GridFS initialized');
     
     // Redis connection
-    await connectRedis();
+    try {
+      await connectRedis();
+      console.log('Redis connected');
+      
+      // Initialize cleanup schedulers after Redis is connected
+      initializeCleanupSchedulers();
+    } catch (error) {
+      console.warn('Redis connection failed, continuing without Redis:', error.message);
+    }
     
     // Websocket connection
     connectSocket(server);
+    console.log('WebSocket initialized');
     
     console.log('All connections initialized successfully');
   } catch (error) {
@@ -64,6 +96,25 @@ const initializeConnections = async () => {
     process.exit(1);
   }
 };
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  stopCleanupSchedulers();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  stopCleanupSchedulers();
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
 
 // Start server
 initializeConnections().then(() => {

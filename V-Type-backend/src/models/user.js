@@ -1,4 +1,6 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose from 'mongoose';
+
+const { Schema } = mongoose;
 
 const userSchema = new Schema({
     username: {
@@ -22,6 +24,10 @@ const userSchema = new Schema({
     profilePicture: {
         type: String,
         default: "https://example.com/default-profile-picture.png",
+    },
+    profilePictureId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null,
     },
     bio: {
         type: String,
